@@ -1596,6 +1596,47 @@ function getQuoteSubLogoTextForPrint() {
   if(['E10008','E10009','E10010'].includes(currentUser.id)) return 'XTREME IT';
   return '';
 }
+// --- Boot sequence ---
+async function boot() {
+  try {
+    const doc = await STATE_REF.get();
+    if (!doc.exists) {
+      const init = initialState();
+      await STATE_REF.set(init);
+      STATE = init;
+    } else {
+      STATE = doc.data();
+    }
+
+    // Live sync
+    STATE_REF.onSnapshot(snap => {
+      if (snap.exists) {
+        STATE = snap.data();
+        // Update logo everywhere
+        document.getElementById('loginLogo').src = STATE.logo || '';
+        if (currentUser) {
+          renderDashboard();
+          renderLeads();
+          renderProducts();
+          renderProductDropdowns();
+        }
+      }
+    });
+
+    // Show logo on login screen
+    document.getElementById('loginLogo').src = STATE.logo || '';
+  } catch (e) {
+    console.error("Boot error:", e);
+    STATE = initialState();
+  }
+}
+
+// Ensure login waits for boot
+window.addEventListener('load', async () => {
+  await boot();
+});
+
+  
 </script>
 </body>
 </html>
